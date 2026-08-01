@@ -108,6 +108,8 @@ class PlayerGestureHelper(
                     if (isControlsLocked) return false
 
                     togglePlayback()
+                    playerView.hideController()
+                    playerView.post { playerView.hideController() }
                     return true
                 }
             },
