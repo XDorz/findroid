@@ -39,6 +39,8 @@ class AppPreferences @Inject constructor(val sharedPreferences: SharedPreference
     val playerGesturesSeek = Preference("pref_player_gestures_seek", true)
     val playerGesturesSeekTrickplay = Preference("pref_player_gestures_seek_trickplay", true)
     val playerGesturesChapterSkip = Preference("pref_player_gestures_chapter_skip", true)
+    val playerGesturesLongPressSpeed =
+        Preference("pref_player_gestures_long_press_speed", "2.0")
     val playerGesturesBrightnessRemember = Preference("pref_player_brightness_remember", false)
     val playerGesturesStartMaximized = Preference("pref_player_start_maximized", false)
 

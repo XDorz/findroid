@@ -63,7 +63,13 @@ class PlayerGestureHelper(
 
     private var lastScaleEvent: Long = 0
 
-    private var playbackSpeedIncrease: Float = 2f
+    private val playbackSpeedIncrease: Float
+        get() =
+            appPreferences
+                .getValue(appPreferences.playerGesturesLongPressSpeed)
+                .toFloatOrNull()
+                ?.coerceIn(1.5f, 3f) ?: 2f
+
     private var lastPlaybackSpeed: Float = 0f
 
     private val screenWidth = Resources.getSystem().displayMetrics.widthPixels
@@ -119,9 +125,12 @@ class PlayerGestureHelper(
     private fun enableSpeedIncrease() {
         playerView.player?.let {
             if (it.isPlaying) {
+                val speed = playbackSpeedIncrease
+                val speedLabel =
+                    if (speed % 1f == 0f) speed.toInt().toString() else speed.toString()
                 lastPlaybackSpeed = it.playbackParameters.speed
-                it.setPlaybackSpeed(playbackSpeedIncrease)
-                activity.binding.gestureSpeedText.text = playbackSpeedIncrease.toString() + "x"
+                it.setPlaybackSpeed(speed)
+                activity.binding.gestureSpeedText.text = "${speedLabel}x"
                 activity.binding.gestureSpeedLayout.visibility = View.VISIBLE
             }
         }
@@ -159,8 +168,10 @@ class PlayerGestureHelper(
 
     private fun displayChapter(chapter: PlayerChapter) {
         activity.binding.progressScrubberTrickplay.visibility = View.GONE
+        activity.binding.progressScrubberTimeText.visibility = View.GONE
         activity.binding.progressScrubberLayout.visibility = View.VISIBLE
         activity.binding.progressScrubberText.text = chapter.name ?: ""
+        activity.binding.progressScrubberText.visibility = View.VISIBLE
     }
 
     private fun fastForward() {
@@ -251,9 +262,11 @@ class PlayerGestureHelper(
                             val difference = ((currentEvent.x - firstEvent.x) * 90).toLong()
                             val newPos = (currentPos + difference).coerceIn(0, vidDuration)
 
-                            activity.binding.progressScrubberLayout.visibility = View.VISIBLE
-                            activity.binding.progressScrubberText.text =
+                            activity.binding.progressScrubberText.visibility = View.GONE
+                            activity.binding.progressScrubberTimeText.text =
                                 "${longToTimestamp(difference)} [${longToTimestamp(newPos, true)}]"
+                            activity.binding.progressScrubberTimeText.visibility = View.VISIBLE
+                            activity.binding.progressScrubberLayout.visibility = View.VISIBLE
                             swipeGestureValueTrackerProgress = newPos
 
                             if (

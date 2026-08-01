@@ -378,6 +378,23 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     backendPreference =
                                                         appPreferences.playerGesturesChapterSkip,
                                                 ),
+                                                PreferenceSelect(
+                                                    nameStringResource =
+                                                        R.string.player_gestures_long_press_speed,
+                                                    descriptionStringRes =
+                                                        R.string
+                                                            .player_gestures_long_press_speed_summary,
+                                                    dependencies =
+                                                        listOf(appPreferences.playerGestures),
+                                                    supportedDeviceTypes = listOf(DeviceType.PHONE),
+                                                    backendPreference =
+                                                        appPreferences.playerGesturesLongPressSpeed,
+                                                    options =
+                                                        R.array.player_gestures_long_press_speeds,
+                                                    optionValues =
+                                                        R.array
+                                                            .player_gestures_long_press_speed_values,
+                                                ),
                                                 PreferenceSwitch(
                                                     nameStringResource =
                                                         R.string.player_brightness_remember,

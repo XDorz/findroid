@@ -8,6 +8,7 @@ on:
       - .github/workflows/custom-build.yaml
       - app/phone/src/main/java/dev/jdtech/jellyfin/utils/PlayerGestureHelper.kt
       - app/phone/src/main/res/layout/activity_player.xml
+      - settings/**
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * *"
