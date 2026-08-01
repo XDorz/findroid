@@ -46,7 +46,6 @@
             android:id="@+id/progress_scrubber_time_text"
             android:layout_width="160dp"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
             android:gravity="center"
             android:includeFontPadding="false"
             android:maxLines="1"
