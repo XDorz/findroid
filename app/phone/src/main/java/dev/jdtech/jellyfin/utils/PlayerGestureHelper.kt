@@ -107,28 +107,7 @@ class PlayerGestureHelper(
                     // Disables double tap gestures if view is locked
                     if (isControlsLocked) return false
 
-                    val viewWidth = playerView.measuredWidth
-                    val areaWidth = viewWidth / 5 // Divide the view into 5 parts: 2:1:2
-
-                    // Define the areas and their boundaries
-                    val leftmostAreaStart = 0
-                    val middleAreaStart = areaWidth * 2
-                    val rightmostAreaStart = middleAreaStart + areaWidth
-
-                    when (e.x.toInt()) {
-                        in leftmostAreaStart until middleAreaStart -> {
-                            // Tapped on the leftmost area (seek backward)
-                            rewind()
-                        }
-                        in middleAreaStart until rightmostAreaStart -> {
-                            // Tapped on the middle area (toggle pause/unpause)
-                            togglePlayback()
-                        }
-                        in rightmostAreaStart until viewWidth -> {
-                            // Tapped on the rightmost area (seek forward)
-                            fastForward()
-                        }
-                    }
+                    togglePlayback()
                     return true
                 }
             },
