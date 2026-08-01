@@ -97,13 +97,30 @@ jobs:
             "$APKSIGNER" verify --verbose --print-certs "$apk"
           done
 
-      - name: Upload phone APKs
-        uses: actions/upload-artifact@v7
+      - name: Update rolling release tag
+        run: |
+          git tag --force custom-latest
+          git push --force origin refs/tags/custom-latest
+
+      - name: Publish direct APK downloads
+        uses: softprops/action-gh-release@v3
         with:
-          name: findroid-fullscreen-double-tap-pause-release-${{ github.run_number }}
-          path: app/phone/build/outputs/apk/libre/release/phone-libre-*-release.apk
-          if-no-files-found: error
-          retention-days: 90
+          tag_name: custom-latest
+          target_commitish: main
+          name: Findroid Fullscreen Double-Tap Pause
+          body: |
+            Custom Findroid build with fullscreen double-tap play/pause.
+
+            APKs are signed with the persistent XDorz custom release key.
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: |
+            app/phone/build/outputs/apk/libre/release/phone-libre-arm64-v8a-release.apk
+            app/phone/build/outputs/apk/libre/release/phone-libre-armeabi-v7a-release.apk
+            app/phone/build/outputs/apk/libre/release/phone-libre-x86-release.apk
+            app/phone/build/outputs/apk/libre/release/phone-libre-x86_64-release.apk
 
       - name: Remove signing key
         if: always()
