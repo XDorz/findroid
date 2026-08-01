@@ -1,6 +1,12 @@
 name: Build Fullscreen Double-Tap Pause
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/custom-build.yaml
+      - app/phone/src/main/java/dev/jdtech/jellyfin/utils/PlayerGestureHelper.kt
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * *"
@@ -43,10 +49,12 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build installable debug APKs
+    name: Build signed release APKs
     needs: sync
-    if: github.event_name == 'workflow_dispatch' || needs.sync.outputs.changed == 'true'
+    if: github.event_name != 'schedule' || needs.sync.outputs.changed == 'true'
     runs-on: ubuntu-24.04
+    env:
+      KEYSTORE_PATH: ${{ runner.temp }}/findroid-release.jks
     steps:
       - name: Checkout synchronized fork
         uses: actions/checkout@v7
@@ -62,13 +70,41 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Build phone debug APKs
-        run: ./gradlew :app:phone:assembleLibreDebug
+      - name: Restore signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FINDROID_CUSTOM_KEYSTORE }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+
+      - name: Build signed phone release APKs
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.FINDROID_CUSTOM_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FINDROID_CUSTOM_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FINDROID_CUSTOM_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:phone:assembleLibreRelease \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
+      - name: Verify APK signatures
+        run: |
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          for apk in app/phone/build/outputs/apk/libre/release/phone-libre-*-release.apk; do
+            "$APKSIGNER" verify --verbose --print-certs "$apk"
+          done
 
       - name: Upload phone APKs
         uses: actions/upload-artifact@v7
         with:
-          name: findroid-fullscreen-double-tap-pause-debug-${{ github.run_number }}
-          path: app/phone/build/outputs/apk/libre/debug/phone-libre-*-debug.apk
+          name: findroid-fullscreen-double-tap-pause-release-${{ github.run_number }}
+          path: app/phone/build/outputs/apk/libre/release/phone-libre-*-release.apk
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
+
+      - name: Remove signing key
+        if: always()
+        run: rm -f "$KEYSTORE_PATH"
