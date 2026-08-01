@@ -21,10 +21,6 @@ import android.widget.ImageView
 import androidx.core.view.isVisible
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
-import coil3.load
-import coil3.request.crossfade
-import coil3.request.transformations
-import coil3.transform.RoundedCornersTransformation
 import dev.jdtech.jellyfin.PlayerActivity
 import dev.jdtech.jellyfin.core.Constants
 import dev.jdtech.jellyfin.isControlsLocked
@@ -33,7 +29,6 @@ import dev.jdtech.jellyfin.player.core.domain.models.Trickplay
 import dev.jdtech.jellyfin.player.local.mpv.MPVPlayer
 import dev.jdtech.jellyfin.settings.domain.AppPreferences
 import kotlin.math.abs
-import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
 
 class PlayerGestureHelper(
@@ -68,7 +63,7 @@ class PlayerGestureHelper(
             appPreferences
                 .getValue(appPreferences.playerGesturesLongPressSpeed)
                 .toFloatOrNull()
-                ?.coerceIn(1.5f, 3f) ?: 2f
+                ?.coerceIn(1.5f, 10f) ?: 2f
 
     private var lastPlaybackSpeed: Float = 0f
 
@@ -76,7 +71,11 @@ class PlayerGestureHelper(
     private val screenHeight = Resources.getSystem().displayMetrics.heightPixels
 
     var currentTrickplay: Trickplay? = null
-    private val trickplayRoundedCorners = RoundedCornersTransformation(10f)
+        set(value) {
+            if (field !== value) currentTrickplayBitmap = null
+            field = value
+        }
+
     private var currentTrickplayBitmap: Bitmap? = null
 
     private var currentNumberOfPointers: Int = 0
@@ -266,21 +265,14 @@ class PlayerGestureHelper(
                             activity.binding.progressScrubberTimeText.text =
                                 "${longToTimestamp(difference)} [${longToTimestamp(newPos, true)}]"
                             activity.binding.progressScrubberTimeText.visibility = View.VISIBLE
-                            activity.binding.progressScrubberLayout.visibility = View.VISIBLE
                             swipeGestureValueTrackerProgress = newPos
 
-                            if (
-                                appPreferences.getValue(appPreferences.playerGesturesSeekTrickplay)
-                            ) {
-                                if (currentTrickplay != null) {
-                                    activity.binding.progressScrubberTrickplay.visibility =
-                                        View.VISIBLE
-                                    updateTrickplayImage(newPos)
-                                } else {
-                                    activity.binding.progressScrubberTrickplay.visibility =
-                                        View.GONE
-                                }
-                            }
+                            val showTrickplay =
+                                appPreferences.getValue(
+                                    appPreferences.playerGesturesSeekTrickplay
+                                ) && updateTrickplayImage(newPos)
+                            activity.binding.progressScrubberTrickplay.isVisible = showTrickplay
+                            activity.binding.progressScrubberLayout.visibility = View.VISIBLE
 
                             swipeGestureProgressOpen = true
                             true
@@ -543,22 +535,25 @@ class PlayerGestureHelper(
         return false
     }
 
-    fun updateTrickplayImage(position: Long) {
-        try {
-            val trickplay = currentTrickplay ?: return
-            val bitmap = trickplay.images[position.div(trickplay.interval).toInt()]
+    private fun updateTrickplayImage(position: Long): Boolean {
+        return try {
+            val trickplay = currentTrickplay ?: return false
+            if (trickplay.interval <= 0 || trickplay.images.isEmpty()) return false
 
-            if (currentTrickplayBitmap != bitmap) {
-                activity.binding.progressScrubberTrickplay.load(bitmap) {
-                    coroutineContext(Dispatchers.Main.immediate)
-                    crossfade(false)
-                    transformations(trickplayRoundedCorners)
-                }
+            val imageIndex =
+                position.div(trickplay.interval).toInt().coerceIn(trickplay.images.indices)
+            val bitmap = trickplay.images[imageIndex]
+            val imageView = activity.binding.progressScrubberTrickplay
+
+            if (currentTrickplayBitmap != bitmap || imageView.drawable == null) {
+                imageView.setImageBitmap(bitmap)
                 currentTrickplayBitmap = bitmap
             }
+
+            true
         } catch (e: Exception) {
-            activity.binding.progressScrubberTrickplay.visibility = View.GONE
             Timber.d(e)
+            false
         }
     }
 

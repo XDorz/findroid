@@ -6,12 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.media3.common.Player
 import androidx.media3.ui.TimeBar
-import coil3.load
-import coil3.request.crossfade
-import coil3.request.transformations
-import coil3.transform.RoundedCornersTransformation
 import dev.jdtech.jellyfin.player.core.domain.models.Trickplay
-import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
 
 class PreviewScrubListener(
@@ -20,7 +15,11 @@ class PreviewScrubListener(
     private val player: Player,
 ) : TimeBar.OnScrubListener {
     var currentTrickplay: Trickplay? = null
-    private val roundedCorners = RoundedCornersTransformation(10f)
+        set(value) {
+            if (field !== value) currentBitMap = null
+            field = value
+        }
+
     private var currentBitMap: Bitmap? = null
 
     override fun onScrubStart(timeBar: TimeBar, position: Long) {
@@ -39,9 +38,18 @@ class PreviewScrubListener(
 
         try {
             val trickplay = currentTrickplay ?: return
-            val image = trickplay.images[position.div(trickplay.interval).toInt()]
+            if (trickplay.interval <= 0 || trickplay.images.isEmpty()) {
+                scrubbingPreview.visibility = View.GONE
+                return
+            }
+
+            val imageIndex =
+                position.div(trickplay.interval).toInt().coerceIn(trickplay.images.indices)
+            val image = trickplay.images[imageIndex]
 
             val parent = scrubbingPreview.parent as ViewGroup
+            val previewWidth =
+                scrubbingPreview.width.takeIf { it > 0 } ?: scrubbingPreview.layoutParams.width
 
             val offset = position.toFloat() / player.duration
             val minX = scrubbingPreview.left
@@ -49,26 +57,23 @@ class PreviewScrubListener(
 
             val startX =
                 timeBarView.left + (timeBarView.right - timeBarView.left) * offset -
-                    scrubbingPreview.width / 2
-            val endX = startX + scrubbingPreview.width
+                    previewWidth / 2
+            val endX = startX + previewWidth
 
             val layoutX =
                 when {
                     startX >= minX && endX <= maxX -> startX
                     startX < minX -> minX
-                    else -> maxX - scrubbingPreview.width
+                    else -> maxX - previewWidth
                 }.toFloat()
 
             scrubbingPreview.x = layoutX
 
-            if (currentBitMap != image) {
-                scrubbingPreview.load(image) {
-                    coroutineContext(Dispatchers.Main.immediate)
-                    crossfade(false)
-                    transformations(roundedCorners)
-                }
+            if (currentBitMap != image || scrubbingPreview.drawable == null) {
+                scrubbingPreview.setImageBitmap(image)
                 currentBitMap = image
             }
+            scrubbingPreview.visibility = View.VISIBLE
         } catch (e: Exception) {
             scrubbingPreview.visibility = View.GONE
             Timber.e(e)
