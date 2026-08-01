@@ -53,8 +53,6 @@ jobs:
     needs: sync
     if: github.event_name != 'schedule' || needs.sync.outputs.changed == 'true'
     runs-on: ubuntu-24.04
-    env:
-      KEYSTORE_PATH: ${{ runner.temp }}/findroid-release.jks
     steps:
       - name: Checkout synchronized fork
         uses: actions/checkout@v7
@@ -74,6 +72,7 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.FINDROID_CUSTOM_KEYSTORE }}
         run: |
+          KEYSTORE_PATH="$RUNNER_TEMP/findroid-release.jks"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
           chmod 600 "$KEYSTORE_PATH"
 
@@ -83,6 +82,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.FINDROID_CUSTOM_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.FINDROID_CUSTOM_KEY_PASSWORD }}
         run: |
+          KEYSTORE_PATH="$RUNNER_TEMP/findroid-release.jks"
           ./gradlew :app:phone:assembleLibreRelease \
             -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
@@ -107,4 +107,4 @@ jobs:
 
       - name: Remove signing key
         if: always()
-        run: rm -f "$KEYSTORE_PATH"
+        run: rm -f "$RUNNER_TEMP/findroid-release.jks"
