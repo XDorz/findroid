@@ -193,12 +193,4 @@
         android:src="@drawable/transparent_circle"
         tools:ignore="ContentDescription" />
 
-    <ImageView
-        android:id="@+id/image_playback_animation_ripple"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_gravity="center"
-        android:alpha="0"
-        android:src="@drawable/transparent_circle"
-        tools:ignore="ContentDescription" />
 </FrameLayout>

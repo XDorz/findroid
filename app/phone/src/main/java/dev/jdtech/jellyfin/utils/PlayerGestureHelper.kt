@@ -191,7 +191,6 @@ class PlayerGestureHelper(
 
     private fun togglePlayback() {
         playerView.player?.playWhenReady = !playerView.player?.playWhenReady!!
-        animateRipple(activity.binding.imagePlaybackAnimationRipple)
     }
 
     private fun seekTo(position: Long) {
