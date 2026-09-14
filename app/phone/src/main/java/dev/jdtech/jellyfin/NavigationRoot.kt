@@ -105,9 +105,7 @@ data class LibraryRoute(
 
 @Serializable data class SettingsRoute(val indexes: IntArray)
 
-@Serializable data class SettingsFileEditRoute(
-    val filePath: String,
-)
+@Serializable data class SettingsFileEditRoute(val filePath: String)
 
 @Serializable data object AboutRoute
 
@@ -226,6 +224,8 @@ fun NavigationRoot(
             startDestination = startDestination,
             enterTransition = { fadeIn(tween(300)) },
             exitTransition = { fadeOut(tween(300)) },
+            predictivePopEnterTransition = { fadeIn(tween(300)) },
+            predictivePopExitTransition = { fadeOut(tween(300)) },
         ) {
             composable<WelcomeRoute> {
                 WelcomeScreen(onContinueClick = { navController.safeNavigate(ServersRoute) })
@@ -458,7 +458,8 @@ fun NavigationRoot(
                 val route: SettingsFileEditRoute = backStackEntry.toRoute()
                 SettingsFileEditScreen(
                     filePath = route.filePath,
-                    navigateBack = { navController.safePopBackStack() })
+                    navigateBack = { navController.safePopBackStack() },
+                )
             }
             composable<AboutRoute> {
                 AboutScreen(navigateBack = { navController.safePopBackStack() })
