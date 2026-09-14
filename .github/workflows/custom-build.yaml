@@ -6,15 +6,24 @@ on:
       - main
     paths:
       - .github/workflows/custom-build.yaml
-      - app/phone/src/main/java/dev/jdtech/jellyfin/utils/PlayerGestureHelper.kt
-      - app/phone/src/main/res/layout/activity_player.xml
+      - app/phone/**
+      - core/**
+      - data/**
+      - player/**
+      - modes/**
+      - setup/**
       - settings/**
+      - buildSrc/**
+      - gradle/**
+      - build.gradle.kts
+      - settings.gradle.kts
+      - gradle.properties
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * *"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: custom-findroid-build
@@ -26,11 +35,14 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       changed: ${{ steps.sync.outputs.changed }}
+      sha: ${{ steps.sync.outputs.sha }}
     steps:
       - name: Checkout fork
         uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
+          ssh-key: ${{ secrets.FINDROID_UPSTREAM_SYNC_SSH_KEY }}
 
       - name: Merge upstream changes
         id: sync
@@ -39,27 +51,30 @@ jobs:
           git remote add upstream https://github.com/jarnedemeulemeester/findroid.git
           git fetch upstream main
 
-          if git merge-base --is-ancestor upstream/main HEAD; then
+          if ! git merge-base --is-ancestor upstream/main HEAD; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            # SSH pushes trigger workflows; this run builds the merged commit itself.
+            git merge --no-ff -m "Merge upstream/main [skip ci]" upstream/main
+            git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
           fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git merge --no-edit upstream/main
-          git push origin HEAD:main
-          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build signed release APKs
     needs: sync
     if: github.event_name != 'schedule' || needs.sync.outputs.changed == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout synchronized fork
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ needs.sync.outputs.sha }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -74,8 +89,10 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.FINDROID_CUSTOM_KEYSTORE }}
         run: |
-          KEYSTORE_PATH="$RUNNER_TEMP/findroid-release.jks"
+          test -n "$KEYSTORE_BASE64"
+          KEYSTORE_PATH="$RUNNER_TEMP/findroid-release.p12"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
           chmod 600 "$KEYSTORE_PATH"
 
       - name: Build signed phone release APKs
@@ -84,7 +101,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.FINDROID_CUSTOM_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.FINDROID_CUSTOM_KEY_PASSWORD }}
         run: |
-          KEYSTORE_PATH="$RUNNER_TEMP/findroid-release.jks"
+          KEYSTORE_PATH="$RUNNER_TEMP/findroid-release.p12"
           ./gradlew :app:phone:assembleLibreRelease \
             -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
@@ -92,11 +109,16 @@ jobs:
             -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
       - name: Verify APK signatures
+        env:
+          EXPECTED_SIGNER_SHA256: 93e277dffd2a74119abc370684b1ae77a50ebf5bfda9e25d6fb7772b243ff733
         run: |
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
           for apk in app/phone/build/outputs/apk/libre/release/phone-libre-*-release.apk; do
-            "$APKSIGNER" verify --verbose --print-certs "$apk"
+            verification="$("$APKSIGNER" verify --verbose --print-certs "$apk")"
+            printf '%s\n' "$verification"
+            signer_sha256="$(printf '%s\n' "$verification" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+            test "$signer_sha256" = "$EXPECTED_SIGNER_SHA256"
           done
 
       - name: Update rolling release tag
@@ -108,12 +130,14 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: custom-latest
-          target_commitish: main
+          target_commitish: ${{ needs.sync.outputs.sha }}
           name: Findroid Fullscreen Double-Tap Pause
           body: |
             Custom Findroid build with fullscreen double-tap play/pause.
 
             APKs are signed with the persistent XDorz custom release key.
+
+            Signing key renewed on 2026-09-14. Installations signed with the older key require a fresh install.
           prerelease: true
           make_latest: false
           overwrite_files: true
@@ -126,4 +150,4 @@ jobs:
 
       - name: Remove signing key
         if: always()
-        run: rm -f "$RUNNER_TEMP/findroid-release.jks"
+        run: rm -f "$RUNNER_TEMP/findroid-release.p12"
