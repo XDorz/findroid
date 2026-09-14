@@ -117,8 +117,11 @@ jobs:
           for apk in app/phone/build/outputs/apk/libre/release/phone-libre-*-release.apk; do
             verification="$("$APKSIGNER" verify --verbose --print-certs "$apk")"
             printf '%s\n' "$verification"
-            signer_sha256="$(printf '%s\n' "$verification" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
-            test "$signer_sha256" = "$EXPECTED_SIGNER_SHA256"
+            signer_sha256="$(printf '%s\n' "$verification" | sed -n 's/^.*certificate SHA-256 digest: //p' | sort -u)"
+            if [ "$signer_sha256" != "$EXPECTED_SIGNER_SHA256" ]; then
+              echo "::error::APK signer certificate does not match the configured release key."
+              exit 1
+            fi
           done
 
       - name: Update rolling release tag
