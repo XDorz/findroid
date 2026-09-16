@@ -6,6 +6,7 @@ using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Findroid.TrickplayRebuild;
 
@@ -22,9 +23,11 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
     public void RegisterServices(IServiceCollection services, IServerApplicationHost host)
     {
         // No replacement/decorator of any Jellyfin service or scheduler.
-        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IRebuildExecutor, JellyfinRebuildExecutor>();
-        services.AddSingleton<RebuildQueue>();
+        services.AddSingleton(provider => new RebuildQueue(
+            provider.GetRequiredService<IRebuildExecutor>(),
+            TimeProvider.System,
+            provider.GetRequiredService<ILogger<RebuildQueue>>()));
         services.AddSingleton<IHostedService>(provider => provider.GetRequiredService<RebuildQueue>());
     }
 }

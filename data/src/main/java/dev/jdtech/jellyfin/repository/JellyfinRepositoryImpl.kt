@@ -83,13 +83,14 @@ class JellyfinRepositoryImpl(
                 )
             val status = Json {
                 ignoreUnknownKeys = true
-            }.decodeFromString<TrickplayRebuildStatus>(response.body.decodeToString())
+            }
+                .decodeFromString<TrickplayRebuildStatus>(response.body.decodeToString())
             check(status.apiVersion == 1) { "Unsupported rebuild plugin version" }
             check(
                 status.state in
                     setOf("none", "queued", "running", "completed", "failed", "interrupted")
             )
-            check(UUID.fromString(status.itemId) == (mediaSourceId ?: itemId))
+            check(status.matchesVideo(mediaSourceId ?: itemId))
             status
         }
 
@@ -604,7 +605,7 @@ class JellyfinRepositoryImpl(
         }
     }
 
-    override suspend fun getUserConfiguration(): UserConfiguration =
+    override suspend fun getUserConfiguration(): UserConfiguration? =
         withContext(Dispatchers.IO) { jellyfinApi.currentUser().configuration }
 
     override suspend fun getDownloads(): List<FindroidItem> =

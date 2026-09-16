@@ -501,9 +501,14 @@ constructor(
 
     private suspend fun getTrickplay(item: PlayerItem) {
         val trickplayInfo = item.trickplayInfo ?: return
-        if (trickplayInfo.width <= 0 || trickplayInfo.height <= 0 ||
-            trickplayInfo.tileWidth <= 0 || trickplayInfo.tileHeight <= 0 ||
-            trickplayInfo.thumbnailCount <= 0) return
+        if (
+            trickplayInfo.width <= 0 ||
+                trickplayInfo.height <= 0 ||
+                trickplayInfo.tileWidth <= 0 ||
+                trickplayInfo.tileHeight <= 0 ||
+                trickplayInfo.thumbnailCount <= 0
+        )
+            return
         Timber.d("Trickplay Resolution: ${trickplayInfo.width}")
 
         withContext(Dispatchers.Default) {

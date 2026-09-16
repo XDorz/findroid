@@ -49,9 +49,31 @@ constructor(private val repository: JellyfinRepositoryImpl) : ViewModel() {
             _state.update { it.copy(administrator = admin) }
             if (!admin) return
             do {
-                val status = requests.withLock {
-                    repository.rebuildTrickplay(itemId, sourceUuid(sourceId), submit = false)
-                }
+                val status =
+                    try {
+                        requests.withLock {
+                            repository.rebuildTrickplay(
+                                itemId,
+                                sourceUuid(sourceId),
+                                submit = false,
+                            )
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        val statusCode = (e as? InvalidStatusException)?.status
+                        if (
+                            _state.value.status?.active == true &&
+                                (statusCode == null || statusCode >= 500 || statusCode == 429)
+                        ) {
+                            // Retry only a read, never the rebuild POST. A transient outage must
+                            // not
+                            // leave a permanently stale running tag blocking further user actions.
+                            delay(10_000)
+                            continue
+                        }
+                        throw e
+                    }
                 val previous = _state.value.status
                 if (
                     previous?.active == true &&
@@ -77,6 +99,8 @@ constructor(private val repository: JellyfinRepositoryImpl) : ViewModel() {
         } catch (e: Exception) {
             if (e is InvalidStatusException && e.status in listOf(401, 403)) {
                 _state.update { it.copy(administrator = false, status = null) }
+            } else if (e is InvalidStatusException && e.status in listOf(400, 404, 405, 422)) {
+                _state.update { it.copy(status = null) }
             }
             // Initial capability/status checks are quiet. An explicit click always gets feedback.
         }
