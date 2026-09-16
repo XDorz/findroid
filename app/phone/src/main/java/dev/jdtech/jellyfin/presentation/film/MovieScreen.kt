@@ -97,7 +97,7 @@ fun MovieScreen(
         }
     }
 
-    TrickplayRebuildHost(movieId, state.movie?.sources.orEmpty()) { rebuildControl ->
+    TrickplayRebuildHost(movieId, state.movie?.sources.orEmpty()) { rebuildButton, rebuildStatus ->
         MovieScreenLayout(
             state = state,
             downloaderState = downloaderState,
@@ -125,7 +125,8 @@ fun MovieScreen(
                 viewModel.onAction(action)
             },
             onDownloaderAction = { action -> downloaderViewModel.onAction(action) },
-            rebuildControl = rebuildControl,
+            rebuildButton = rebuildButton,
+            rebuildStatus = rebuildStatus,
         )
     }
 }
@@ -136,7 +137,8 @@ private fun MovieScreenLayout(
     downloaderState: DownloaderState,
     onAction: (MovieAction) -> Unit,
     onDownloaderAction: (DownloaderAction) -> Unit,
-    rebuildControl: @Composable () -> Unit = {},
+    rebuildButton: @Composable () -> Unit = {},
+    rebuildStatus: @Composable () -> Unit = {},
 ) {
     val safePadding = rememberSafePadding()
 
@@ -250,8 +252,9 @@ private fun MovieScreenLayout(
                             onDownloaderAction(DownloaderAction.DeleteDownload(movie))
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        trailingActions = rebuildButton,
                     )
-                    rebuildControl()
+                    rebuildStatus()
                     Spacer(Modifier.height(MaterialTheme.spacings.small))
                     if (state.displayExtraInfo && state.videoMetadata != null) {
                         ExtraInfoText(videoMetadata = state.videoMetadata!!)

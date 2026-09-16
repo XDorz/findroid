@@ -6,7 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -20,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -38,7 +40,7 @@ import java.util.UUID
 fun TrickplayRebuildHost(
     itemId: UUID,
     sources: List<FindroidSource>,
-    content: @Composable (@Composable () -> Unit) -> Unit,
+    content: @Composable (button: @Composable () -> Unit, status: @Composable () -> Unit) -> Unit,
 ) {
     val viewModel: TrickplayRebuildViewModel = hiltViewModel(key = "trickplay-$itemId")
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -66,10 +68,10 @@ fun TrickplayRebuildHost(
     }
 
     Box(Modifier.fillMaxSize()) {
-        content {
-            if (!offline && state.administrator && source != null) {
-                Column {
-                    OutlinedButton(
+        content(
+            {
+                if (!offline && state.administrator && source != null) {
+                    FilledTonalIconButton(
                         onClick = {
                             if (
                                 versions.size > 1 &&
@@ -80,25 +82,35 @@ fun TrickplayRebuildHost(
                             } else viewModel.submit(itemId, source.id)
                         }
                     ) {
-                        Text(stringResource(R.string.trickplay_rebuild_button))
-                    }
-                    if (state.status?.active == true) {
-                        AssistChip(
-                            onClick = { viewModel.submit(itemId, source.id) },
-                            label = {
-                                Text(
-                                    stringResource(
-                                        if (state.status?.state == "queued")
-                                            R.string.trickplay_rebuild_queued
-                                        else R.string.trickplay_rebuild_running
-                                    )
-                                )
-                            },
+                        Icon(
+                            painter = painterResource(R.drawable.ic_image_refresh),
+                            contentDescription = stringResource(R.string.trickplay_rebuild_button),
                         )
                     }
                 }
-            }
-        }
+            },
+            {
+                if (
+                    !offline &&
+                        state.administrator &&
+                        source != null &&
+                        state.status?.active == true
+                ) {
+                    AssistChip(
+                        onClick = { viewModel.submit(itemId, source.id) },
+                        label = {
+                            Text(
+                                stringResource(
+                                    if (state.status?.state == "queued")
+                                        R.string.trickplay_rebuild_queued
+                                    else R.string.trickplay_rebuild_running
+                                )
+                            )
+                        },
+                    )
+                }
+            },
+        )
         SnackbarHost(
             snackbar,
             Modifier.align(Alignment.BottomCenter).padding(bottom = safePadding.bottom + 12.dp),

@@ -52,6 +52,7 @@ fun ItemButtonsBar(
     modifier: Modifier = Modifier,
     downloaderState: DownloaderState? = null,
     canPlay: Boolean = true,
+    trailingActions: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
@@ -180,6 +181,7 @@ fun ItemButtonsBar(
                         }
                     }
                 }
+                trailingActions()
             }
             if (downloaderState != null) {
                 AnimatedVisibility(downloaderState.isDownloading) {
