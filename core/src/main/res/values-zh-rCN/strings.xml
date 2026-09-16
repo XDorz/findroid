@@ -108,4 +108,21 @@
     <string name="download_paused">已暂停</string>
     <string name="download_downloading">正在下载…</string>
     <string name="download_failed">下载失败</string>
+
+    <!-- Single-video Trickplay rebuild -->
+    <string name="trickplay_rebuild_button">重建预览图</string>
+    <string name="trickplay_rebuild_choose_version">选择需要重建预览图的视频版本</string>
+    <string name="trickplay_rebuild_forbidden">当前账号没有服务器管理权限，无法重建预览图。</string>
+    <string name="trickplay_rebuild_submitted">已提交预览图重建，服务器将在后台处理。</string>
+    <string name="trickplay_rebuild_duplicate">此视频的预览图正在排队或处理中，请勿重复提交。</string>
+    <string name="trickplay_rebuild_busy">重建请求较多，请稍后再试。</string>
+    <string name="trickplay_rebuild_unavailable">重建插件不可用或不兼容，或者此视频已不存在。</string>
+    <string name="trickplay_rebuild_unsupported">请检查媒体库是否启用了 Trickplay，以及视频文件是否可访问且受支持。</string>
+    <string name="trickplay_rebuild_uncertain">暂时无法确认是否提交成功，请先查看任务状态再重试。</string>
+    <string name="trickplay_rebuild_failed">未能确认预览图生成成功，请检查服务器日志。</string>
+    <string name="trickplay_rebuild_completed">预览图已重新生成。</string>
+    <string name="trickplay_rebuild_lost">重建已中断或状态已失效，请检查后再提交。</string>
+    <string name="trickplay_rebuild_queued">预览图重建排队中</string>
+    <string name="trickplay_rebuild_running">预览图重建处理中</string>
+    <string name="trickplay_rebuild_cache_error">服务器请求已受理，但部分本地预览图缓存未能清理。</string>
 </resources>

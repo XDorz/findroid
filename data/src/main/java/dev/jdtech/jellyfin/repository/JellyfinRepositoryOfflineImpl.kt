@@ -215,13 +215,21 @@ class JellyfinRepositoryOfflineImpl(
     override suspend fun getSegments(itemId: UUID): List<FindroidSegment> =
         withContext(Dispatchers.IO) { database.getSegments(itemId).map { it.toFindroidSegment() } }
 
-    override suspend fun getTrickplayData(itemId: UUID, width: Int, index: Int): ByteArray? =
+    override suspend fun getTrickplayData(
+        itemId: UUID,
+        width: Int,
+        index: Int,
+        mediaSourceId: String?,
+    ): ByteArray? =
         withContext(Dispatchers.IO) {
             try {
                 val sources =
                     File(context.filesDir, "trickplay/$itemId").listFiles()
                         ?: return@withContext null
-                File(sources.first(), index.toString()).readBytes()
+                val source =
+                    if (mediaSourceId == null) sources.firstOrNull()
+                    else sources.firstOrNull { it.name == mediaSourceId }
+                source?.let { File(it, index.toString()).readBytes() }
             } catch (_: Exception) {
                 null
             }

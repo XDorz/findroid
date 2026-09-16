@@ -242,4 +242,7 @@ interface ServerDatabaseDao {
 
     @Query("SELECT * FROM trickplayInfos WHERE sourceId = :sourceId")
     suspend fun getTrickplayInfo(sourceId: String): FindroidTrickplayInfoDto?
+
+    @Query("DELETE FROM trickplayInfos WHERE sourceId = :sourceId")
+    suspend fun deleteTrickplayInfo(sourceId: String)
 }

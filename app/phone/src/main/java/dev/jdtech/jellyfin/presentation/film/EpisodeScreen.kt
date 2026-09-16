@@ -53,6 +53,7 @@ import dev.jdtech.jellyfin.presentation.film.components.ItemButtonsBar
 import dev.jdtech.jellyfin.presentation.film.components.ItemHeader
 import dev.jdtech.jellyfin.presentation.film.components.ItemTopBar
 import dev.jdtech.jellyfin.presentation.film.components.OverviewText
+import dev.jdtech.jellyfin.presentation.film.components.TrickplayRebuildHost
 import dev.jdtech.jellyfin.presentation.film.components.VideoMetadataBar
 import dev.jdtech.jellyfin.presentation.theme.FindroidTheme
 import dev.jdtech.jellyfin.presentation.theme.spacings
@@ -100,28 +101,31 @@ fun EpisodeScreen(
         }
     }
 
-    EpisodeScreenLayout(
-        state = state,
-        downloaderState = downloaderState,
-        onAction = { action ->
-            when (action) {
-                is EpisodeAction.Play -> {
-                    val intent = Intent(context, PlayerActivity::class.java)
-                    intent.putExtra("itemId", episodeId.toString())
-                    intent.putExtra("itemKind", BaseItemKind.EPISODE.serialName)
-                    intent.putExtra("startFromBeginning", action.startFromBeginning)
-                    context.startActivity(intent)
+    TrickplayRebuildHost(episodeId, state.episode?.sources.orEmpty()) { rebuildControl ->
+        EpisodeScreenLayout(
+            state = state,
+            downloaderState = downloaderState,
+            onAction = { action ->
+                when (action) {
+                    is EpisodeAction.Play -> {
+                        val intent = Intent(context, PlayerActivity::class.java)
+                        intent.putExtra("itemId", episodeId.toString())
+                        intent.putExtra("itemKind", BaseItemKind.EPISODE.serialName)
+                        intent.putExtra("startFromBeginning", action.startFromBeginning)
+                        context.startActivity(intent)
+                    }
+                    is EpisodeAction.OnBackClick -> navigateBack()
+                    is EpisodeAction.OnHomeClick -> navigateHome()
+                    is EpisodeAction.NavigateToPerson -> navigateToPerson(action.personId)
+                    is EpisodeAction.NavigateToSeason -> navigateToSeason(action.seasonId)
+                    else -> Unit
                 }
-                is EpisodeAction.OnBackClick -> navigateBack()
-                is EpisodeAction.OnHomeClick -> navigateHome()
-                is EpisodeAction.NavigateToPerson -> navigateToPerson(action.personId)
-                is EpisodeAction.NavigateToSeason -> navigateToSeason(action.seasonId)
-                else -> Unit
-            }
-            viewModel.onAction(action)
-        },
-        onDownloaderAction = { action -> downloaderViewModel.onAction(action) },
-    )
+                viewModel.onAction(action)
+            },
+            onDownloaderAction = { action -> downloaderViewModel.onAction(action) },
+            rebuildControl = rebuildControl,
+        )
+    }
 }
 
 @Composable
@@ -130,6 +134,7 @@ private fun EpisodeScreenLayout(
     downloaderState: DownloaderState,
     onAction: (EpisodeAction) -> Unit,
     onDownloaderAction: (DownloaderAction) -> Unit,
+    rebuildControl: @Composable () -> Unit = {},
 ) {
     val safePadding = rememberSafePadding()
 
@@ -249,6 +254,7 @@ private fun EpisodeScreenLayout(
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    rebuildControl()
                     Spacer(Modifier.height(MaterialTheme.spacings.small))
                     if (state.displayExtraInfo && state.videoMetadata != null) {
                         ExtraInfoText(videoMetadata = state.videoMetadata!!)

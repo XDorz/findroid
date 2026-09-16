@@ -92,7 +92,12 @@ interface JellyfinRepository {
 
     suspend fun getSegments(itemId: UUID): List<FindroidSegment>
 
-    suspend fun getTrickplayData(itemId: UUID, width: Int, index: Int): ByteArray?
+    suspend fun getTrickplayData(
+        itemId: UUID,
+        width: Int,
+        index: Int,
+        mediaSourceId: String? = null,
+    ): ByteArray?
 
     suspend fun postCapabilities()
 

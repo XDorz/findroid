@@ -296,7 +296,8 @@ class DownloaderImpl(
                 .toInt()
         val byteArrays = mutableListOf<ByteArray>()
         for (i in 0..maxIndex) {
-            jellyfinRepository.getTrickplayData(itemId, trickplayInfo.width, i)?.let { byteArray ->
+            jellyfinRepository.getTrickplayData(itemId, trickplayInfo.width, i, sourceId)?.let {
+                byteArray ->
                 byteArrays.add(byteArray)
             }
         }

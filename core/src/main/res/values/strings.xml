@@ -109,4 +109,21 @@
     <string name="download_paused">Paused</string>
     <string name="download_downloading">Downloading…</string>
     <string name="download_failed">Failed to download</string>
+
+    <!-- Single-video Trickplay rebuild -->
+    <string name="trickplay_rebuild_button">Rebuild previews</string>
+    <string name="trickplay_rebuild_choose_version">Choose the video version to rebuild</string>
+    <string name="trickplay_rebuild_forbidden">Your account does not have server administrator permission to rebuild previews.</string>
+    <string name="trickplay_rebuild_submitted">Preview rebuild submitted. The server will process it in the background.</string>
+    <string name="trickplay_rebuild_duplicate">This video is already queued or rebuilding. Please do not submit it again.</string>
+    <string name="trickplay_rebuild_busy">Too many rebuild requests. Please try again later.</string>
+    <string name="trickplay_rebuild_unavailable">The rebuild plugin is unavailable or incompatible, or this video no longer exists.</string>
+    <string name="trickplay_rebuild_unsupported">Check that Trickplay is enabled for this library and the video is accessible and supported.</string>
+    <string name="trickplay_rebuild_uncertain">Unable to confirm submission. Check the task status before trying again.</string>
+    <string name="trickplay_rebuild_failed">Unable to verify preview generation. Check the server log.</string>
+    <string name="trickplay_rebuild_completed">Preview images have been rebuilt.</string>
+    <string name="trickplay_rebuild_lost">The rebuild was interrupted or its status has expired. Check before submitting again.</string>
+    <string name="trickplay_rebuild_queued">Preview rebuild queued</string>
+    <string name="trickplay_rebuild_running">Rebuilding preview images</string>
+    <string name="trickplay_rebuild_cache_error">The server request was accepted, but some local preview cache could not be cleared.</string>
 </resources>

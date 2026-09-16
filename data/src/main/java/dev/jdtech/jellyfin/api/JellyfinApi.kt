@@ -1,11 +1,14 @@
 package dev.jdtech.jellyfin.api
 
 import android.content.Context
+import android.os.SystemClock
 import dev.jdtech.jellyfin.data.BuildConfig
 import dev.jdtech.jellyfin.settings.domain.Constants
 import java.util.UUID
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.extensions.brandingApi
 import org.jellyfin.sdk.api.client.extensions.devicesApi
@@ -25,6 +28,7 @@ import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.createJellyfin
 import org.jellyfin.sdk.model.ClientInfo
+import org.jellyfin.sdk.model.api.UserDto
 
 /**
  * Jellyfin API class using org.jellyfin.sdk:jellyfin-platform-android
@@ -77,6 +81,28 @@ class JellyfinApi(
     val userLibraryApi = api.userLibraryApi
     val videosApi = api.videosApi
     val viewsApi = api.userViewsApi
+
+    private val userMutex = Mutex()
+    private var cachedUser: UserDto? = null
+    private var cachedUserKey: Triple<String?, UUID?, String?>? = null
+    private var cachedUserAt = 0L
+
+    // Configuration and administrator visibility share the same existing user request.
+    suspend fun currentUser(): UserDto = userMutex.withLock {
+        val key = Triple(api.baseUrl, userId, api.accessToken)
+        val now = SystemClock.elapsedRealtime()
+        cachedUser?.let {
+            if (cachedUserKey == key && now - cachedUserAt < 60_000) return@withLock it
+        }
+        val user = userApi.getCurrentUser().content
+        if (key != Triple(api.baseUrl, userId, api.accessToken)) {
+            throw IllegalStateException("Server session changed")
+        }
+        cachedUser = user
+        cachedUserKey = key
+        cachedUserAt = now
+        user
+    }
 
     companion object {
         @Volatile private var INSTANCE: JellyfinApi? = null

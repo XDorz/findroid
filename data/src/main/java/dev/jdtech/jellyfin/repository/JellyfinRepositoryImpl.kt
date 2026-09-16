@@ -17,6 +17,7 @@ import dev.jdtech.jellyfin.models.FindroidShow
 import dev.jdtech.jellyfin.models.FindroidSource
 import dev.jdtech.jellyfin.models.SortBy
 import dev.jdtech.jellyfin.models.SortOrder
+import dev.jdtech.jellyfin.models.TrickplayRebuildStatus
 import dev.jdtech.jellyfin.models.toFindroidCollection
 import dev.jdtech.jellyfin.models.toFindroidEpisode
 import dev.jdtech.jellyfin.models.toFindroidItem
@@ -29,9 +30,12 @@ import dev.jdtech.jellyfin.models.toFindroidSource
 import dev.jdtech.jellyfin.settings.domain.AppPreferences
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import org.jellyfin.sdk.api.client.HttpMethod
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceOptionsDto
@@ -61,6 +65,51 @@ class JellyfinRepositoryImpl(
     private val database: ServerDatabaseDao,
     private val appPreferences: AppPreferences,
 ) : JellyfinRepository {
+    suspend fun isAdministrator(): Boolean =
+        jellyfinApi.currentUser().policy?.isAdministrator == true
+
+    suspend fun rebuildTrickplay(
+        itemId: UUID,
+        mediaSourceId: UUID?,
+        submit: Boolean,
+    ): TrickplayRebuildStatus =
+        withContext(Dispatchers.IO) {
+            val response =
+                jellyfinApi.api.request(
+                    method = if (submit) HttpMethod.POST else HttpMethod.GET,
+                    pathTemplate = "/TrickplayRebuild/Items/{itemId}",
+                    pathParameters = mapOf("itemId" to itemId),
+                    queryParameters = mapOf("mediaSourceId" to mediaSourceId),
+                )
+            val status = Json {
+                ignoreUnknownKeys = true
+            }.decodeFromString<TrickplayRebuildStatus>(response.body.decodeToString())
+            check(status.apiVersion == 1) { "Unsupported rebuild plugin version" }
+            check(
+                status.state in
+                    setOf("none", "queued", "running", "completed", "failed", "interrupted")
+            )
+            check(UUID.fromString(status.itemId) == (mediaSourceId ?: itemId))
+            status
+        }
+
+    suspend fun invalidateTrickplayCache(itemId: UUID, sourceId: String) =
+        withContext(Dispatchers.IO) {
+            // Source IDs come from the server, but must never become arbitrary filesystem paths.
+            val id =
+                sourceId.replace("-", "").also {
+                    require(
+                        it.length == 32 &&
+                            it.all { char -> char in '0'..'9' || char.lowercaseChar() in 'a'..'f' }
+                    )
+                }
+            File(context.filesDir, "trickplay/$itemId")
+                .listFiles()
+                ?.filter { it.name.replace("-", "").equals(id, ignoreCase = true) }
+                ?.forEach { it.deleteRecursively() }
+            database.deleteTrickplayInfo(sourceId)
+        }
+
     override suspend fun getPublicSystemInfo(): PublicSystemInfo =
         withContext(Dispatchers.IO) { jellyfinApi.systemApi.getPublicSystemInfo().content }
 
@@ -373,21 +422,27 @@ class JellyfinRepositoryImpl(
             }
         }
 
-    override suspend fun getTrickplayData(itemId: UUID, width: Int, index: Int): ByteArray? =
+    override suspend fun getTrickplayData(
+        itemId: UUID,
+        width: Int,
+        index: Int,
+        mediaSourceId: String?,
+    ): ByteArray? =
         withContext(Dispatchers.IO) {
             try {
-                try {
-                    val sources = File(context.filesDir, "trickplay/$itemId").listFiles()
-                    if (sources != null) {
-                        return@withContext File(sources.first(), index.toString()).readBytes()
-                    }
-                } catch (_: Exception) {}
-
-                return@withContext jellyfinApi.trickplayApi
-                    .getTrickplayTileImage(itemId, width, index)
-                    .content
+                // Online playback must use the current server manifest and the matching version.
+                jellyfinApi.api
+                    .request(
+                        pathTemplate = "/Videos/{itemId}/Trickplay/{width}/{index}.jpg",
+                        pathParameters =
+                            mapOf("itemId" to itemId, "width" to width, "index" to index),
+                        queryParameters = mapOf("mediaSourceId" to mediaSourceId),
+                    )
+                    .body
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
-                return@withContext null
+                null
             }
         }
 
@@ -550,7 +605,7 @@ class JellyfinRepositoryImpl(
     }
 
     override suspend fun getUserConfiguration(): UserConfiguration =
-        withContext(Dispatchers.IO) { jellyfinApi.userApi.getCurrentUser().content.configuration!! }
+        withContext(Dispatchers.IO) { jellyfinApi.currentUser().configuration }
 
     override suspend fun getDownloads(): List<FindroidItem> =
         withContext(Dispatchers.IO) {

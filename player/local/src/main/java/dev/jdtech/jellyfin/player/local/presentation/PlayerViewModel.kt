@@ -501,6 +501,9 @@ constructor(
 
     private suspend fun getTrickplay(item: PlayerItem) {
         val trickplayInfo = item.trickplayInfo ?: return
+        if (trickplayInfo.width <= 0 || trickplayInfo.height <= 0 ||
+            trickplayInfo.tileWidth <= 0 || trickplayInfo.tileHeight <= 0 ||
+            trickplayInfo.thumbnailCount <= 0) return
         Timber.d("Trickplay Resolution: ${trickplayInfo.width}")
 
         withContext(Dispatchers.Default) {
@@ -513,27 +516,36 @@ constructor(
                     .toInt()
             val bitmaps = mutableListOf<Bitmap>()
 
-            for (i in 0..maxIndex) {
-                repository.getTrickplayData(item.itemId, trickplayInfo.width, i)?.let { byteArray ->
-                    val fullBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-                    for (offsetY in
-                        0..<trickplayInfo.height * trickplayInfo.tileHeight step
-                            trickplayInfo.height) {
-                        for (offsetX in
-                            0..<trickplayInfo.width * trickplayInfo.tileWidth step
-                                trickplayInfo.width) {
-                            val bitmap =
-                                Bitmap.createBitmap(
-                                    fullBitmap,
-                                    offsetX,
-                                    offsetY,
-                                    trickplayInfo.width,
-                                    trickplayInfo.height,
-                                )
-                            bitmaps.add(bitmap)
+            for (i in 0 until maxIndex) {
+                repository
+                    .getTrickplayData(item.itemId, trickplayInfo.width, i, item.mediaSourceId)
+                    ?.let { byteArray ->
+                        val fullBitmap =
+                            BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                                ?: return@withContext
+                        if (
+                            fullBitmap.width < trickplayInfo.width * trickplayInfo.tileWidth ||
+                                fullBitmap.height < trickplayInfo.height * trickplayInfo.tileHeight
+                        )
+                            return@withContext
+                        for (offsetY in
+                            0..<trickplayInfo.height * trickplayInfo.tileHeight step
+                                trickplayInfo.height) {
+                            for (offsetX in
+                                0..<trickplayInfo.width * trickplayInfo.tileWidth step
+                                    trickplayInfo.width) {
+                                val bitmap =
+                                    Bitmap.createBitmap(
+                                        fullBitmap,
+                                        offsetX,
+                                        offsetY,
+                                        trickplayInfo.width,
+                                        trickplayInfo.height,
+                                    )
+                                bitmaps.add(bitmap)
+                            }
                         }
                     }
-                }
             }
             _uiState.update {
                 it.copy(currentTrickplay = Trickplay(trickplayInfo.interval, bitmaps))

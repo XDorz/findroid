@@ -1,4 +1,4 @@
-name: Build Fullscreen Double-Tap Pause
+name: Build Custom Findroid
 
 on:
   push:
@@ -134,9 +134,12 @@ jobs:
         with:
           tag_name: custom-latest
           target_commitish: ${{ needs.sync.outputs.sha }}
-          name: Findroid Fullscreen Double-Tap Pause
+          name: Findroid Custom
           body: |
-            Custom Findroid build with fullscreen double-tap play/pause.
+            Custom Findroid with fullscreen double-tap play/pause, long-press speed controls, and administrator-only Trickplay rebuild from movie/episode details.
+
+            Trickplay rebuild requires the companion Jellyfin 12.1 plugin:
+            https://github.com/XDorz/findroid/releases/tag/trickplay-plugin-latest
 
             APKs are signed with the persistent XDorz custom release key.
 

@@ -1,0 +1,58 @@
+name: Build Trickplay rebuild plugin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - plugins/**
+      - .github/workflows/trickplay-plugin.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trickplay-plugin-release
+  cancel-in-progress: false
+
+jobs:
+  plugin:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and test
+        run: dotnet test plugins/TrickplayRebuild.Tests -c Release --nologo
+      - name: Package plugin
+        run: |
+          mkdir -p plugins/dist/TrickplayRebuild
+          cp plugins/TrickplayRebuild/bin/Release/net10.0/Findroid.TrickplayRebuild.dll plugins/dist/TrickplayRebuild/
+          cp plugins/TrickplayRebuild/meta.json plugins/dist/TrickplayRebuild/
+          cp plugins/README.md plugins/dist/TrickplayRebuild/README.md
+          cd plugins/dist
+          zip -r trickplay-rebuild-jellyfin-12.1.zip TrickplayRebuild
+          sha256sum trickplay-rebuild-jellyfin-12.1.zip > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trickplay-rebuild-jellyfin-12.1
+          path: plugins/dist/*.*
+      - name: Publish plugin
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: trickplay-plugin-latest
+          target_commitish: ${{ github.sha }}
+          name: Trickplay Rebuild for Jellyfin 12.1
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          body: |
+            Administrator-only single-video Trickplay regeneration, without metadata refresh.
+            Built for Jellyfin 12.1 (.NET 10). Extract the TrickplayRebuild directory into /config/data/plugins on LinuxServer and restart Jellyfin.
+            Uses native Jellyfin settings. Deduplicates plugin requests only; native jobs are not intercepted.
+          files: |
+            plugins/dist/trickplay-rebuild-jellyfin-12.1.zip
+            plugins/dist/SHA256SUMS

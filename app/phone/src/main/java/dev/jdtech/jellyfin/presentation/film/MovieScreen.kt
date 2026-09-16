@@ -52,6 +52,7 @@ import dev.jdtech.jellyfin.presentation.film.components.ItemButtonsBar
 import dev.jdtech.jellyfin.presentation.film.components.ItemHeader
 import dev.jdtech.jellyfin.presentation.film.components.ItemTopBar
 import dev.jdtech.jellyfin.presentation.film.components.OverviewText
+import dev.jdtech.jellyfin.presentation.film.components.TrickplayRebuildHost
 import dev.jdtech.jellyfin.presentation.film.components.VideoMetadataBar
 import dev.jdtech.jellyfin.presentation.theme.FindroidTheme
 import dev.jdtech.jellyfin.presentation.theme.spacings
@@ -96,34 +97,37 @@ fun MovieScreen(
         }
     }
 
-    MovieScreenLayout(
-        state = state,
-        downloaderState = downloaderState,
-        onAction = { action ->
-            when (action) {
-                is MovieAction.Play -> {
-                    val intent = Intent(context, PlayerActivity::class.java)
-                    intent.putExtra("itemId", movieId.toString())
-                    intent.putExtra("itemKind", BaseItemKind.MOVIE.serialName)
-                    intent.putExtra("startFromBeginning", action.startFromBeginning)
-                    context.startActivity(intent)
-                }
-                is MovieAction.PlayTrailer -> {
-                    try {
-                        uriHandler.openUri(action.trailer)
-                    } catch (e: IllegalArgumentException) {
-                        Toast.makeText(context, e.localizedMessage, Toast.LENGTH_SHORT).show()
+    TrickplayRebuildHost(movieId, state.movie?.sources.orEmpty()) { rebuildControl ->
+        MovieScreenLayout(
+            state = state,
+            downloaderState = downloaderState,
+            onAction = { action ->
+                when (action) {
+                    is MovieAction.Play -> {
+                        val intent = Intent(context, PlayerActivity::class.java)
+                        intent.putExtra("itemId", movieId.toString())
+                        intent.putExtra("itemKind", BaseItemKind.MOVIE.serialName)
+                        intent.putExtra("startFromBeginning", action.startFromBeginning)
+                        context.startActivity(intent)
                     }
+                    is MovieAction.PlayTrailer -> {
+                        try {
+                            uriHandler.openUri(action.trailer)
+                        } catch (e: IllegalArgumentException) {
+                            Toast.makeText(context, e.localizedMessage, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    is MovieAction.OnBackClick -> navigateBack()
+                    is MovieAction.OnHomeClick -> navigateHome()
+                    is MovieAction.NavigateToPerson -> navigateToPerson(action.personId)
+                    else -> Unit
                 }
-                is MovieAction.OnBackClick -> navigateBack()
-                is MovieAction.OnHomeClick -> navigateHome()
-                is MovieAction.NavigateToPerson -> navigateToPerson(action.personId)
-                else -> Unit
-            }
-            viewModel.onAction(action)
-        },
-        onDownloaderAction = { action -> downloaderViewModel.onAction(action) },
-    )
+                viewModel.onAction(action)
+            },
+            onDownloaderAction = { action -> downloaderViewModel.onAction(action) },
+            rebuildControl = rebuildControl,
+        )
+    }
 }
 
 @Composable
@@ -132,6 +136,7 @@ private fun MovieScreenLayout(
     downloaderState: DownloaderState,
     onAction: (MovieAction) -> Unit,
     onDownloaderAction: (DownloaderAction) -> Unit,
+    rebuildControl: @Composable () -> Unit = {},
 ) {
     val safePadding = rememberSafePadding()
 
@@ -246,6 +251,7 @@ private fun MovieScreenLayout(
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    rebuildControl()
                     Spacer(Modifier.height(MaterialTheme.spacings.small))
                     if (state.displayExtraInfo && state.videoMetadata != null) {
                         ExtraInfoText(videoMetadata = state.videoMetadata!!)
