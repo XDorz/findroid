@@ -40,6 +40,10 @@ jobs:
         with:
           name: trickplay-rebuild-jellyfin-12.1
           path: plugins/dist/*.*
+      - name: Update plugin release tag
+        run: |
+          git tag --force trickplay-plugin-latest
+          git push --force origin refs/tags/trickplay-plugin-latest
       - name: Publish plugin
         uses: softprops/action-gh-release@v3
         with:
