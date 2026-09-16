@@ -133,8 +133,8 @@ constructor(private val repository: JellyfinRepositoryImpl) : ViewModel() {
                         403 -> R.string.trickplay_rebuild_forbidden
                         409 -> R.string.trickplay_rebuild_duplicate
                         429 -> R.string.trickplay_rebuild_busy
-                        404,
-                        405,
+                        404 -> R.string.trickplay_rebuild_not_found
+                        405 -> R.string.trickplay_rebuild_method_not_allowed
                         503 -> R.string.trickplay_rebuild_unavailable
                         400,
                         422 -> R.string.trickplay_rebuild_unsupported

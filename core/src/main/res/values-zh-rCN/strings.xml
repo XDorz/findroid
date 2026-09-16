@@ -116,7 +116,9 @@
     <string name="trickplay_rebuild_submitted">已提交预览图重建，服务器将在后台处理。</string>
     <string name="trickplay_rebuild_duplicate">此视频的预览图正在排队或处理中，请勿重复提交。</string>
     <string name="trickplay_rebuild_busy">重建请求较多，请稍后再试。</string>
-    <string name="trickplay_rebuild_unavailable">重建插件不可用或不兼容，或者此视频已不存在。</string>
+    <string name="trickplay_rebuild_not_found">未找到重建接口或视频（HTTP 404），请确认插件已安装且服务器地址正确。</string>
+    <string name="trickplay_rebuild_method_not_allowed">服务器拒绝了重建请求方式（HTTP 405），请检查插件及代理配置。</string>
+    <string name="trickplay_rebuild_unavailable">重建服务不可用（HTTP 503），请确认插件支持当前 Jellyfin 版本，且服务器未在重启。</string>
     <string name="trickplay_rebuild_unsupported">请检查媒体库是否启用了 Trickplay，以及视频文件是否可访问且受支持。</string>
     <string name="trickplay_rebuild_uncertain">暂时无法确认是否提交成功，请先查看任务状态再重试。</string>
     <string name="trickplay_rebuild_failed">未能确认预览图生成成功，请检查服务器日志。</string>

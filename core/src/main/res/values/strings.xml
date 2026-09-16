@@ -117,7 +117,9 @@
     <string name="trickplay_rebuild_submitted">Preview rebuild submitted. The server will process it in the background.</string>
     <string name="trickplay_rebuild_duplicate">This video is already queued or rebuilding. Please do not submit it again.</string>
     <string name="trickplay_rebuild_busy">Too many rebuild requests. Please try again later.</string>
-    <string name="trickplay_rebuild_unavailable">The rebuild plugin is unavailable or incompatible, or this video no longer exists.</string>
+    <string name="trickplay_rebuild_not_found">Rebuild endpoint or video not found (HTTP 404). Check that the plugin is installed and the server address is correct.</string>
+    <string name="trickplay_rebuild_method_not_allowed">The server rejected the rebuild request method (HTTP 405). Check the plugin and proxy configuration.</string>
+    <string name="trickplay_rebuild_unavailable">Rebuild service unavailable (HTTP 503). Check the plugin supports your Jellyfin version and the server is not restarting.</string>
     <string name="trickplay_rebuild_unsupported">Check that Trickplay is enabled for this library and the video is accessible and supported.</string>
     <string name="trickplay_rebuild_uncertain">Unable to confirm submission. Check the task status before trying again.</string>
     <string name="trickplay_rebuild_failed">Unable to verify preview generation. Check the server log.</string>
