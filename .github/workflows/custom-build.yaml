@@ -139,7 +139,7 @@ jobs:
             Custom Findroid with fullscreen double-tap play/pause, long-press speed controls, and administrator-only Trickplay rebuild from movie/episode details.
 
             Trickplay rebuild requires the companion Jellyfin 12.1 plugin:
-            https://github.com/XDorz/findroid/releases/tag/trickplay-plugin-latest
+            https://github.com/XDorz/jellyfin-plugin-trickplay-rebuild
 
             APKs are signed with the persistent XDorz custom release key.
 
