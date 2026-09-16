@@ -102,7 +102,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.FINDROID_CUSTOM_KEY_PASSWORD }}
         run: |
           KEYSTORE_PATH="$RUNNER_TEMP/findroid-release.p12"
-          ./gradlew :data:testReleaseUnitTest :app:phone:assembleLibreRelease \
+          ./gradlew :data:testDebugUnitTest :app:phone:assembleLibreRelease \
             -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \

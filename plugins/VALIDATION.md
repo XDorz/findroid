@@ -21,6 +21,10 @@ Verified:
 - The NFO SHA-256 stays identical. Item metadata read from the same details
   endpoint before/after stays identical: title, original title, overview, external
   IDs, genres, people, tags, year, official rating and premiere date.
+- Changing the test server's native settings to 160-pixel width and a 2-second
+  interval produces exactly those values in the generated manifest.
+- With two grouped versions, selecting the alternate source generates previews
+  only for that source; the other version remains untouched.
 
 ## Automated coverage
 
