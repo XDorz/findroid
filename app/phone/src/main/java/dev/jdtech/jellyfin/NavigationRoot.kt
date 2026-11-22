@@ -7,18 +7,20 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SearchBarState
+import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -71,6 +73,7 @@ import dev.jdtech.jellyfin.presentation.utils.LocalOfflineMode
 import dev.jdtech.jellyfin.setup.presentation.permission.PermissionAction
 import dev.jdtech.jellyfin.setup.presentation.permission.PermissionViewModel
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 private val TOP_LEVEL_ROUTES = setOf(HomeRoute, MediaRoute, DownloadsRoute)
 private val GLOBAL_TRANSITION_SPEC = fadeIn(tween(300)) togetherWith fadeOut(tween(300))
@@ -132,9 +135,7 @@ fun NavigationRoot(
             listOf(saveableStateHolderDecorator, viewModelStoreDecorator)
         }
 
-    // Exposed as a state object (rather than a plain value) so the entry content closures, which
-    // nav3 caches per back stack snapshot, always read the current value.
-    val searchExpanded = remember { mutableStateOf(false) }
+    val searchBarState = rememberSearchBarState()
 
     // Live setup condition: keep the back stacks in a consistent state across mode switches. The
     // stacks are reconciled during composition (rather than in a LaunchedEffect, which only runs
@@ -172,7 +173,7 @@ fun NavigationRoot(
                 navigator = navigator,
                 entryDecorators = entryDecorators,
                 isOfflineMode = LocalOfflineMode.current,
-                searchExpanded = searchExpanded,
+                searchBarState = searchBarState,
                 permissionViewModel = permissionViewModel,
                 permissionApplicable = permissionState.currentRequest != null,
             )
@@ -199,10 +200,12 @@ private fun MainNavigation(
     navigator: Navigator,
     entryDecorators: List<NavEntryDecorator<NavKey>>,
     isOfflineMode: Boolean,
-    searchExpanded: MutableState<Boolean>,
+    searchBarState: SearchBarState,
     permissionViewModel: PermissionViewModel,
     permissionApplicable: Boolean,
 ) {
+    val scope = rememberCoroutineScope()
+
     val navigationItems =
         when (isOfflineMode) {
             false -> listOf(homeTab, mediaTab, downloadsTab)
@@ -212,14 +215,17 @@ private fun MainNavigation(
 
     val topLevelRoute = navigationState.topLevelRoute
     val atTabRoot = navigationState.currentBackStack().last() == topLevelRoute
-    val showBottomBar = atTabRoot && topLevelRoute in tabRoutes && !searchExpanded.value
+    val showBottomBar =
+        atTabRoot &&
+            topLevelRoute in tabRoutes &&
+            searchBarState.targetValue != SearchBarValue.Expanded
 
     // The search bar belongs to the Media tab: collapse it when the active top level route
     // changes away from Media (e.g. via the home button on a detail screen) so that the bottom
     // bar is shown again.
     LaunchedEffect(topLevelRoute) {
-        if (topLevelRoute != MediaRoute) {
-            searchExpanded.value = false
+        if (topLevelRoute != MediaRoute && searchBarState.targetValue == SearchBarValue.Expanded) {
+            scope.launch { searchBarState.animateToCollapsed() }
         }
     }
 
@@ -238,7 +244,7 @@ private fun MainNavigation(
         with(windowAdaptiveInfo) {
             if (
                 windowSizeClass.isWidthAtLeastBreakpoint(
-                    WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
+                    WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND,
                 )
             ) {
                 NavigationSuiteType.NavigationRail
@@ -251,10 +257,10 @@ private fun MainNavigation(
         mainEntries(
             navigator = navigator,
             onSearchClick = {
-                searchExpanded.value = true
+                scope.launch { searchBarState.animateToExpanded() }
                 navigator.navigate(MediaRoute)
             },
-            searchExpanded = searchExpanded,
+            searchBarState = searchBarState,
             permissionViewModel = permissionViewModel,
             permissionApplicable = permissionApplicable,
         )
@@ -267,7 +273,7 @@ private fun MainNavigation(
                     selected = topLevelRoute == item.route,
                     onClick = {
                         if (item.route == MediaRoute && topLevelRoute == MediaRoute) {
-                            searchExpanded.value = true
+                            scope.launch { searchBarState.animateToExpanded() }
                         }
 
                         navigator.navigate(item.route)
@@ -352,7 +358,7 @@ private fun EntryProviderScope<NavKey>.setupEntries(
             onContinueClick =
                 dropUnlessResumed {
                     navigate(if (permissionApplicable) PermissionRoute else ServersRoute)
-                }
+                },
         )
     }
     entry<PermissionRoute> {
@@ -412,7 +418,7 @@ private fun EntryProviderScope<NavKey>.setupEntries(
 private fun EntryProviderScope<NavKey>.mainEntries(
     navigator: Navigator,
     onSearchClick: () -> Unit,
-    searchExpanded: MutableState<Boolean>,
+    searchBarState: SearchBarState,
     permissionViewModel: PermissionViewModel,
     permissionApplicable: Boolean,
 ) {
@@ -434,7 +440,7 @@ private fun EntryProviderScope<NavKey>.mainEntries(
                             libraryId = library.id.toString(),
                             libraryName = library.name,
                             libraryType = library.type,
-                        )
+                        ),
                     )
                 },
             onSearchClick = dropUnlessResumed { onSearchClick() },
@@ -450,8 +456,7 @@ private fun EntryProviderScope<NavKey>.mainEntries(
         MediaScreen(
             onItemClick = resumedAction { item -> navigateToItem(navigator, item) },
             onFavoritesClick = dropUnlessResumed { navigator.navigate(FavoritesRoute) },
-            searchExpanded = searchExpanded.value,
-            onSearchExpand = { searchExpanded.value = it },
+            searchBarState = searchBarState,
         )
     }
     entry<DownloadsRoute> {
@@ -462,7 +467,7 @@ private fun EntryProviderScope<NavKey>.mainEntries(
                         navigator,
                         item,
                     )
-                }
+                },
         )
     }
     entry<LibraryRoute> { key ->
@@ -592,7 +597,7 @@ private fun navigateToItem(navigator: Navigator, item: FindroidItem) {
     when (item) {
         is FindroidBoxSet ->
             navigator.navigate(
-                CollectionRoute(collectionId = item.id.toString(), collectionName = item.name)
+                CollectionRoute(collectionId = item.id.toString(), collectionName = item.name),
             )
         is FindroidMovie -> navigator.navigate(MovieRoute(movieId = item.id.toString()))
         is FindroidShow -> navigator.navigate(ShowRoute(showId = item.id.toString()))
@@ -604,7 +609,7 @@ private fun navigateToItem(navigator: Navigator, item: FindroidItem) {
                     libraryId = item.id.toString(),
                     libraryName = item.name,
                     libraryType = item.type,
-                )
+                ),
             )
         is FindroidFolder ->
             navigator.navigate(
@@ -612,7 +617,7 @@ private fun navigateToItem(navigator: Navigator, item: FindroidItem) {
                     libraryId = item.id.toString(),
                     libraryName = item.name,
                     libraryType = CollectionType.Folders,
-                )
+                ),
             )
         else -> Unit
     }

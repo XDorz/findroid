@@ -51,14 +51,14 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                         onClick = {
                             viewModelScope.launch {
                                 eventsChannel.send(
-                                    SettingsEvent.NavigateToSettings(listOf(it.nameStringResource))
+                                    SettingsEvent.NavigateToSettings(listOf(it.nameStringResource)),
                                 )
                             }
                         },
                         nestedPreferenceGroups =
                             listOf(PreferenceGroup(preferences = permissionPreferences)),
-                    )
-                )
+                    ),
+                ),
         )
 
     private val topLevelPreferences =
@@ -77,8 +77,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                 }
                             },
                             backendPreference = appPreferences.offlineMode,
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -90,8 +90,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                 viewModelScope.launch {
                                     eventsChannel.send(
                                         SettingsEvent.NavigateToSettings(
-                                            listOf(it.nameStringResource)
-                                        )
+                                            listOf(it.nameStringResource),
+                                        ),
                                     )
                                 }
                             },
@@ -106,8 +106,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     enabled =
                                                         Build.VERSION.SDK_INT >=
                                                             Build.VERSION_CODES.TIRAMISU,
-                                                )
-                                            )
+                                                ),
+                                            ),
                                     ),
                                     PreferenceGroup(
                                         preferences =
@@ -133,11 +133,11 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     optionValues = R.array.languages_values,
                                                     optionsIncludeNull = true,
                                                 ),
-                                            )
+                                            ),
                                     ),
                                 ),
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -149,8 +149,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                 viewModelScope.launch {
                                     eventsChannel.send(
                                         SettingsEvent.NavigateToSettings(
-                                            listOf(it.nameStringResource)
-                                        )
+                                            listOf(it.nameStringResource),
+                                        ),
                                     )
                                 }
                             },
@@ -168,8 +168,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                         viewModelScope.launch {
                                                             eventsChannel.send(
                                                                 SettingsEvent.UpdateTheme(
-                                                                    value ?: "system"
-                                                                )
+                                                                    value ?: "system",
+                                                                ),
                                                             )
                                                         }
                                                     },
@@ -223,12 +223,12 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                         R.string.extra_info_summary,
                                                     backendPreference =
                                                         appPreferences.displayExtraInfo,
-                                                )
-                                            )
+                                                ),
+                                            ),
                                     ),
                                 ),
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -240,8 +240,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                 viewModelScope.launch {
                                     eventsChannel.send(
                                         SettingsEvent.NavigateToSettings(
-                                            listOf(it.nameStringResource)
-                                        )
+                                            listOf(it.nameStringResource),
+                                        ),
                                     )
                                 }
                             },
@@ -261,14 +261,14 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                                 SettingsEvent.LaunchIntent(
                                                                     Intent(
                                                                         Settings
-                                                                            .ACTION_CAPTIONING_SETTINGS
-                                                                    )
-                                                                )
+                                                                            .ACTION_CAPTIONING_SETTINGS,
+                                                                    ),
+                                                                ),
                                                             )
                                                         }
                                                     },
-                                                )
-                                            )
+                                                ),
+                                            ),
                                     ),
                                     PreferenceGroup(
                                         preferences =
@@ -291,8 +291,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                                         R.string
                                                                             .settings_category_player,
                                                                         it.nameStringResource,
-                                                                    )
-                                                                )
+                                                                    ),
+                                                                ),
                                                             )
                                                         }
                                                     },
@@ -337,7 +337,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                                             optionValues =
                                                                                 R.array.mpv_aos,
                                                                         ),
-                                                                    )
+                                                                    ),
                                                             ),
                                                             PreferenceGroup(
                                                                 nameStringResource =
@@ -358,8 +358,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                                                                 SettingsEvent
                                                                                                     .NavigateToSettingsFileEdit(
                                                                                                         it
-                                                                                                            .filePath
-                                                                                                    )
+                                                                                                            .filePath,
+                                                                                                    ),
                                                                                             )
                                                                                     }
                                                                             },
@@ -378,8 +378,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                                                                 SettingsEvent
                                                                                                     .NavigateToSettingsFileEdit(
                                                                                                         it
-                                                                                                            .filePath
-                                                                                                    )
+                                                                                                            .filePath,
+                                                                                                    ),
                                                                                             )
                                                                                     }
                                                                             },
@@ -388,7 +388,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                             ),
                                                         ),
                                                 ),
-                                            )
+                                            ),
                                     ),
                                     PreferenceGroup(
                                         nameStringResource = R.string.gestures,
@@ -539,7 +539,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     dependencies =
                                                         listOf(
                                                             appPreferences
-                                                                .playerMediaSegmentsSkipButton
+                                                                .playerMediaSegmentsSkipButton,
                                                         ),
                                                     backendPreference =
                                                         appPreferences
@@ -555,7 +555,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     dependencies =
                                                         listOf(
                                                             appPreferences
-                                                                .playerMediaSegmentsSkipButton
+                                                                .playerMediaSegmentsSkipButton,
                                                         ),
                                                     backendPreference =
                                                         appPreferences
@@ -579,7 +579,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     dependencies =
                                                         listOf(
                                                             appPreferences
-                                                                .playerMediaSegmentsAutoSkip
+                                                                .playerMediaSegmentsAutoSkip,
                                                         ),
                                                     supportedDeviceTypes = listOf(DeviceType.PHONE),
                                                     backendPreference =
@@ -596,7 +596,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     dependencies =
                                                         listOf(
                                                             appPreferences
-                                                                .playerMediaSegmentsAutoSkip
+                                                                .playerMediaSegmentsAutoSkip,
                                                         ),
                                                     backendPreference =
                                                         appPreferences
@@ -655,12 +655,12 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     supportedDeviceTypes = listOf(DeviceType.PHONE),
                                                     backendPreference =
                                                         appPreferences.playerPipGesture,
-                                                )
+                                                ),
                                             ),
                                     ),
                                 ),
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -673,8 +673,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                     eventsChannel.send(SettingsEvent.NavigateToUsers)
                                 }
                             },
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -687,8 +687,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                     eventsChannel.send(SettingsEvent.NavigateToServers)
                                 }
                             },
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -701,8 +701,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                 viewModelScope.launch {
                                     eventsChannel.send(
                                         SettingsEvent.NavigateToSettings(
-                                            listOf(it.nameStringResource)
-                                        )
+                                            listOf(it.nameStringResource),
+                                        ),
                                     )
                                 }
                             },
@@ -722,17 +722,17 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                     nameStringResource = R.string.download_roaming,
                                                     dependencies =
                                                         listOf(
-                                                            appPreferences.downloadOverMobileData
+                                                            appPreferences.downloadOverMobileData,
                                                         ),
                                                     supportedDeviceTypes = listOf(DeviceType.PHONE),
                                                     backendPreference =
                                                         appPreferences.downloadWhenRoaming,
                                                 ),
-                                            )
-                                    )
+                                            ),
+                                    ),
                                 ),
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -744,8 +744,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                 viewModelScope.launch {
                                     eventsChannel.send(
                                         SettingsEvent.NavigateToSettings(
-                                            listOf(it.nameStringResource)
-                                        )
+                                            listOf(it.nameStringResource),
+                                        ),
                                     )
                                 }
                             },
@@ -775,11 +775,11 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                         appPreferences.socketTimeout,
                                                     suffixRes = R.string.ms,
                                                 ),
-                                            )
-                                    )
+                                            ),
+                                    ),
                                 ),
-                        )
-                    )
+                        ),
+                    ),
             ),
             PreferenceGroup(
                 preferences =
@@ -791,8 +791,8 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                 viewModelScope.launch {
                                     eventsChannel.send(
                                         SettingsEvent.NavigateToSettings(
-                                            listOf(it.nameStringResource)
-                                        )
+                                            listOf(it.nameStringResource),
+                                        ),
                                     )
                                 }
                             },
@@ -819,11 +819,11 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                         appPreferences.imageCacheSize,
                                                     suffixRes = R.string.mb,
                                                 ),
-                                            )
-                                    )
+                                            ),
+                                    ),
                                 ),
-                        )
-                    )
+                        ),
+                    ),
             ),
         ) +
             // Show the Permissions category only if at least one permission applies on this Android
@@ -845,9 +845,9 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                         eventsChannel.send(SettingsEvent.NavigateToAbout)
                                     }
                                 },
-                            )
-                        )
-                )
+                            ),
+                        ),
+                ),
             )
 
     fun loadPreferences(indexes: List<Int> = emptyList(), deviceType: DeviceType) {
@@ -894,7 +894,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                             },
                                                     value =
                                                         appPreferences.getValue(
-                                                            preference.backendPreference
+                                                            preference.backendPreference,
                                                         ),
                                                 )
                                             }
@@ -907,7 +907,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                             },
                                                     value =
                                                         appPreferences.getValue(
-                                                            preference.backendPreference
+                                                            preference.backendPreference,
                                                         ),
                                                 )
                                             }
@@ -920,7 +920,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                             },
                                                     value =
                                                         appPreferences.getValue(
-                                                            preference.backendPreference
+                                                            preference.backendPreference,
                                                         ),
                                                 )
                                             }
@@ -933,7 +933,7 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                             },
                                                     value =
                                                         appPreferences.getValue(
-                                                            preference.backendPreference
+                                                            preference.backendPreference,
                                                         ),
                                                 )
                                             }
@@ -946,13 +946,13 @@ class SettingsViewModel @Inject constructor(private val appPreferences: AppPrefe
                                                             },
                                                     value =
                                                         appPreferences.getValue(
-                                                            preference.backendPreference
+                                                            preference.backendPreference,
                                                         ),
                                                 )
                                             }
                                             else -> preference
                                         }
-                                    }
+                                    },
                         )
                     }
                     .filter { it.preferences.isNotEmpty() }
